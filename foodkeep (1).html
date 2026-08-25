@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foodkeep — track it before you trash it</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🥕%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================= TOKENS ============================= */
+:root{
+  --paper:#ECE3CE;
+  --paper-light:#F7F2E6;
+  --ink:#2A2420;
+  --ink-soft:#6E6355;
+  --ink-faint:#9C8F7C;
+  --herb:#54693C;
+  --herb-light:#DDE6C7;
+  --tomato:#BC4425;
+  --tomato-light:#F3D9CB;
+  --yolk:#D99A32;
+  --yolk-light:#F5E3C0;
+  --compost:#2E241C;
+  --compost-soft:#3C2F24;
+  --line: rgba(42,36,30,0.16);
+  --line-strong: rgba(42,36,30,0.32);
+  --shadow: 0 10px 24px rgba(30,24,16,0.14);
+  --radius: 10px;
+  --display: "Big Shoulders Display", sans-serif;
+  --body: "Libre Franklin", sans-serif;
+  --mono: "IBM Plex Mono", monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--body);
+  color:var(--ink);
+  background:var(--paper);
+  background-image:
+    radial-gradient(circle, rgba(42,36,30,0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+h1,h2,h3,h4{
+  font-family:var(--display);
+  text-transform:uppercase;
+  letter-spacing:0.01em;
+  margin:0;
+  color:var(--ink);
+  font-weight:800;
+}
+p{margin:0;}
+a{color:inherit;}
+button{font-family:var(--body);}
+input,select,textarea{font-family:var(--body);}
+::selection{background:var(--yolk-light);}
+
+.view{display:none;}
+.view.active{display:block;}
+
+/* ============================= BUTTONS ============================= */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--body); font-weight:700; font-size:0.92rem;
+  padding:13px 22px; border-radius:8px; border:2px solid var(--ink);
+  cursor:pointer; transition:transform .12s ease, box-shadow .12s ease;
+  text-decoration:none; white-space:nowrap;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--tomato); border-color:var(--tomato); color:var(--paper-light); box-shadow:3px 3px 0 var(--ink);}
+.btn-primary:hover{box-shadow:5px 5px 0 var(--ink); transform:translate(-2px,-2px);}
+.btn-dark{background:var(--ink); color:var(--paper-light); border-color:var(--ink); box-shadow:3px 3px 0 var(--tomato);}
+.btn-dark:hover{box-shadow:5px 5px 0 var(--tomato); transform:translate(-2px,-2px);}
+.btn-ghost{background:transparent; color:var(--ink); border-color:var(--ink);}
+.btn-ghost:hover{background:var(--ink); color:var(--paper-light);}
+.btn-sm{padding:8px 14px; font-size:0.8rem; border-radius:6px;}
+.btn-block{width:100%;}
+.btn[disabled]{opacity:0.5; cursor:not-allowed;}
+
+/* ============================= LANDING NAV ============================= */
+.navbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 6vw; position:sticky; top:0; z-index:20;
+  background:rgba(236,227,206,0.9); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--display); font-size:1.4rem; letter-spacing:0.02em;}
+.stamp-mark{
+  width:38px;height:38px;border-radius:50%;border:2.5px dashed var(--tomato);
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(-8deg); color:var(--tomato); font-family:var(--display); font-size:0.95rem;
+  flex-shrink:0;
+}
+.nav-links{display:flex; gap:28px; align-items:center; font-weight:600; font-size:0.92rem;}
+.nav-links a{cursor:pointer;}
+.nav-links a:hover{color:var(--tomato);}
+
+/* ============================= HERO ============================= */
+.hero{
+  display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px;
+  padding:64px 6vw 32px; align-items:center; max-width:1280px; margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mono); font-size:0.78rem; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--tomato); font-weight:600; margin-bottom:14px; display:inline-block;
+}
+.hero h1{font-size:clamp(2.6rem,5.4vw,4.4rem); line-height:0.98; letter-spacing:0.005em;}
+.hero h1 em{font-style:normal; color:var(--tomato);}
+.hero-copy p.lede{font-family:var(--body); font-size:1.08rem; color:var(--ink-soft); max-width:46ch; margin:20px 0 30px; font-weight:400;}
+.hero-actions{display:flex; gap:14px; flex-wrap:wrap;}
+.hero-note{margin-top:18px; font-size:0.82rem; color:var(--ink-faint); font-family:var(--mono);}
+
+/* Receipt signature element */
+.receipt-wrap{display:flex; justify-content:center;}
+.receipt{
+  background:var(--paper-light); width:100%; max-width:320px; padding:26px 22px 34px;
+  box-shadow:var(--shadow); position:relative; font-family:var(--mono); font-size:0.86rem;
+  transform:rotate(1.4deg);
+  border:1px solid var(--line);
+}
+.receipt::before{
+  content:""; position:absolute; left:0; right:0; bottom:-10px; height:20px;
+  background-image: linear-gradient(-45deg, var(--paper) 8px, transparent 0), linear-gradient(45deg, var(--paper) 8px, transparent 0);
+  background-position:bottom left; background-size:16px 20px; background-repeat:repeat-x;
+}
+.receipt-head{text-align:center; font-family:var(--display); font-size:1.1rem; letter-spacing:0.06em; margin-bottom:4px;}
+.receipt-sub{text-align:center; color:var(--ink-faint); font-size:0.72rem; margin-bottom:14px;}
+.receipt-divider{border-top:1px dashed var(--line-strong); margin:10px 0;}
+.receipt-line{display:flex; justify-content:space-between; gap:10px; padding:5px 0; opacity:0; animation:printIn .5s ease forwards;}
+.receipt-line span:first-child{color:var(--ink-soft);}
+.receipt-line.wasted span:last-child{color:var(--tomato); font-weight:600;}
+.receipt-line:nth-child(1){animation-delay:.2s;}
+.receipt-total{display:flex; justify-content:space-between; font-weight:700; padding-top:10px; font-size:0.95rem;}
+.receipt-total .num{font-family:var(--mono);}
+.receipt-stamp{
+  margin:16px auto 0; width:fit-content; border:2px solid var(--tomato); color:var(--tomato);
+  padding:4px 14px; border-radius:4px; font-family:var(--display); font-size:0.78rem; letter-spacing:0.12em;
+  transform:rotate(-6deg); opacity:0; animation:stampIn .3s ease forwards; animation-delay:1.6s;
+}
+@keyframes printIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
+@keyframes stampIn{from{opacity:0; transform:rotate(-6deg) scale(1.4);} to{opacity:1; transform:rotate(-6deg) scale(1);}}
+
+/* ============================= STATS STRIP ============================= */
+.stats-strip{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+  max-width:1120px; margin:40px auto 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.stat-block{padding:32px 20px; text-align:center; border-left:1px solid var(--line);}
+.stat-block:first-child{border-left:none;}
+.stat-block .num{font-family:var(--display); font-size:2.6rem; color:var(--tomato); line-height:1;}
+.stat-block .cap{font-size:0.85rem; color:var(--ink-soft); margin-top:8px; max-width:22ch; margin-left:auto; margin-right:auto;}
+.stat-block .src{font-family:var(--mono); font-size:0.68rem; color:var(--ink-faint); margin-top:6px; display:block;}
+
+/* ============================= SECTIONS ============================= */
+.section{max-width:1120px; margin:0 auto; padding:88px 6vw 0;}
+.section-title{font-size:clamp(1.8rem,3vw,2.4rem); max-width:16ch;}
+.section-lede{color:var(--ink-soft); max-width:52ch; margin-top:14px; font-size:1.02rem;}
+
+.steps{display:grid; grid-template-columns:repeat(3,1fr); gap:28px; margin-top:44px;}
+.step{border-top:3px solid var(--ink); padding-top:16px;}
+.step .idx{font-family:var(--mono); color:var(--tomato); font-weight:600; font-size:0.85rem;}
+.step h3{font-size:1.15rem; margin:10px 0 8px;}
+.step p{color:var(--ink-soft); font-size:0.95rem;}
+
+.features-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-top:44px;}
+.feature-card{
+  background:var(--paper-light); border:1px solid var(--line); border-radius:var(--radius);
+  padding:24px 20px; transition:transform .15s ease, box-shadow .15s ease;
+}
+.feature-card:hover{transform:translateY(-4px); box-shadow:var(--shadow);}
+.feature-tag{
+  display:inline-block; font-family:var(--mono); font-size:0.68rem; letter-spacing:0.08em;
+  padding:3px 8px; border-radius:4px; margin-bottom:14px; text-transform:uppercase;
+}
+.tag-herb{background:var(--herb-light); color:var(--herb);}
+.tag-tomato{background:var(--tomato-light); color:var(--tomato);}
+.tag-yolk{background:var(--yolk-light); color:#8a611c;}
+.feature-card h3{font-size:1.05rem; margin-bottom:8px;}
+.feature-card p{color:var(--ink-soft); font-size:0.9rem;}
+
+.cta-band{
+  margin-top:100px; background:var(--compost); color:var(--paper-light);
+  padding:64px 6vw; text-align:center;
+}
+.cta-band h2{color:var(--paper-light); font-size:clamp(1.9rem,4vw,3rem); max-width:18ch; margin:0 auto 22px;}
+.cta-band .btn-primary{box-shadow:3px 3px 0 var(--paper-light);}
+.cta-band .btn-primary:hover{box-shadow:5px 5px 0 var(--paper-light);}
+
+.footer{background:var(--compost); color:var(--paper-light); padding:40px 6vw 30px;}
+.footer-top{display:flex; justify-content:space-between; flex-wrap:wrap; gap:24px; padding-bottom:24px; border-bottom:1px solid rgba(247,242,230,0.15);}
+.footer .brand{color:var(--paper-light);}
+.footer .stamp-mark{border-color:var(--yolk); color:var(--yolk);}
+.footer-links{display:flex; gap:26px; font-size:0.88rem; flex-wrap:wrap;}
+.footer-links a{cursor:pointer; opacity:0.85;}
+.footer-links a:hover{opacity:1; color:var(--yolk);}
+.footer-bottom{display:flex; justify-content:space-between; padding-top:18px; font-family:var(--mono); font-size:0.72rem; color:var(--ink-faint); flex-wrap:wrap; gap:8px;}
+
+/* ============================= LOGIN ============================= */
+.login-view{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 6vw;}
+.login-card{
+  width:100%; max-width:420px; background:var(--paper-light); border:1px solid var(--line);
+  border-radius:6px; padding:38px 34px 32px; box-shadow:var(--shadow); position:relative;
+  transform:rotate(-0.6deg);
+}
+.tape{
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(-2deg);
+  width:120px; height:28px; background:rgba(217,154,50,0.35); border:1px solid rgba(217,154,50,0.5);
+}
+.login-back{display:inline-flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--ink-soft); margin-bottom:22px; cursor:pointer; font-weight:600;}
+.login-back:hover{color:var(--tomato);}
+.login-head{text-align:center; margin-bottom:22px;}
+.login-head .stamp-mark{margin:0 auto 14px;}
+.login-head h2{font-size:1.6rem;}
+.login-head p{color:var(--ink-soft); font-size:0.88rem; margin-top:6px;}
+.tabs{display:flex; border:2px solid var(--ink); border-radius:8px; overflow:hidden; margin-bottom:24px;}
+.tab{flex:1; text-align:center; padding:10px; font-weight:700; font-size:0.85rem; cursor:pointer; background:transparent;}
+.tab.active{background:var(--ink); color:var(--paper-light);}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:0.78rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;}
+.field input, .field select, .field textarea{
+  width:100%; padding:11px 12px; border:1.5px solid var(--line-strong); border-radius:6px;
+  background:var(--paper); font-size:0.95rem; color:var(--ink);
+}
+.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--tomato); outline-offset:1px;}
+.error-msg{background:var(--tomato-light); color:var(--tomato); padding:10px 12px; border-radius:6px; font-size:0.85rem; margin-bottom:16px; display:none;}
+.error-msg.show{display:block;}
+.login-foot{text-align:center; margin-top:18px; font-size:0.85rem; color:var(--ink-soft);}
+.login-foot a{color:var(--tomato); font-weight:700; cursor:pointer;}
+.divider-or{display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--ink-faint); font-size:0.78rem; font-family:var(--mono);}
+.divider-or::before, .divider-or::after{content:""; flex:1; height:1px; background:var(--line);}
+.hint-note{font-size:0.72rem; color:var(--ink-faint); text-align:center; margin-top:16px; line-height:1.5;}
+
+/* ============================= APP SHELL ============================= */
+.app-shell{display:grid; grid-template-columns:230px 1fr; min-height:100vh;}
+.sidebar{background:var(--compost); color:var(--paper-light); padding:24px 18px; display:flex; flex-direction:column;}
+.sidebar .brand{color:var(--paper-light); font-size:1.15rem; margin-bottom:34px;}
+.sidebar .stamp-mark{border-color:var(--yolk); color:var(--yolk); width:32px; height:32px; font-size:0.8rem;}
+.sidebar-nav{display:flex; flex-direction:column; gap:4px; flex:1;}
+.side-link{
+  display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:7px; cursor:pointer;
+  font-weight:600; font-size:0.92rem; color:rgba(247,242,230,0.75); border:1px solid transparent;
+}
+.side-link svg{width:18px; height:18px; flex-shrink:0;}
+.side-link:hover{background:rgba(247,242,230,0.06); color:var(--paper-light);}
+.side-link.active{background:var(--paper-light); color:var(--ink); border-color:var(--paper-light);}
+.sidebar-user{border-top:1px solid rgba(247,242,230,0.15); padding-top:16px; margin-top:16px;}
+.sidebar-user .name{font-weight:700; font-size:0.9rem;}
+.sidebar-user .email{font-size:0.75rem; color:rgba(247,242,230,0.55); margin-bottom:12px;}
+.logout-link{font-size:0.82rem; color:var(--yolk); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:6px;}
+.logout-link:hover{text-decoration:underline;}
+
+.main{padding:32px 40px 60px; max-width:1180px;}
+.topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; flex-wrap:wrap; gap:16px;}
+.greeting{font-size:clamp(1.5rem,2.6vw,2rem);}
+.date-chip{font-family:var(--mono); font-size:0.8rem; color:var(--ink-soft); margin-top:4px;}
+.topbar-actions{display:flex; gap:10px;}
+
+.stat-cards{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;}
+.stat-card{background:var(--paper-light); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+.stat-card .label{font-family:var(--mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft);}
+.stat-card .value{font-family:var(--display); font-size:1.9rem; margin-top:6px;}
+.stat-card .value.tomato{color:var(--tomato);}
+.stat-card .value.herb{color:var(--herb);}
+.stat-card .value.yolk{color:#8a611c;}
+.stat-card .trend{font-size:0.78rem; margin-top:6px; color:var(--ink-faint);}
+
+.two-col{display:grid; grid-template-columns:1.2fr 1fr; gap:20px; align-items:start;}
+.panel{background:var(--paper-light); border:1px solid var(--line); border-radius:var(--radius); padding:22px;}
+.panel-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+.panel-head h3{font-size:1.05rem;}
+.panel-head a{font-size:0.8rem; color:var(--tomato); cursor:pointer; font-weight:700;}
+.empty-state{text-align:center; padding:30px 10px; color:var(--ink-faint); font-size:0.88rem;}
+
+.expiring-item{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--line);}
+.expiring-item:last-child{border-bottom:none;}
+.expiring-item .name{font-weight:600; font-size:0.92rem;}
+.expiring-item .meta{font-size:0.78rem; color:var(--ink-soft);}
+.expiry-chip{font-family:var(--mono); font-size:0.7rem; padding:3px 9px; border-radius:20px; font-weight:600; white-space:nowrap;}
+.expiry-chip.fresh{background:var(--herb-light); color:var(--herb);}
+.expiry-chip.soon{background:var(--yolk-light); color:#8a611c;}
+.expiry-chip.expired{background:var(--tomato-light); color:var(--tomato);}
+
+.mini-receipt .receipt-line{opacity:1; animation:none; padding:8px 0; border-bottom:1px dashed var(--line); font-size:0.85rem;}
+.mini-receipt .receipt-line:last-child{border-bottom:none;}
+
+/* Pantry */
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px;}
+.chip{
+  font-size:0.82rem; font-weight:600; padding:8px 15px; border-radius:20px; border:1.5px solid var(--line-strong);
+  background:var(--paper-light); cursor:pointer; color:var(--ink-soft);
+}
+.chip.active{background:var(--ink); border-color:var(--ink); color:var(--paper-light);}
+.pantry-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px;}
+.pantry-card{background:var(--paper-light); border:1px solid var(--line); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:10px;}
+.pantry-card .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.pantry-card .item-name{font-weight:700; font-size:1rem;}
+.pantry-card .item-meta{font-size:0.8rem; color:var(--ink-soft); font-family:var(--mono);}
+.pantry-card .cat-label{font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); font-family:var(--mono);}
+.card-actions{display:flex; gap:8px; margin-top:auto;}
+
+/* Waste log */
+.wastelog-receipt{background:var(--paper-light); border:1px solid var(--line); border-radius:var(--radius); padding:24px; max-width:640px;}
+.wastelog-row{display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px dashed var(--line);}
+.wastelog-row .left .n{font-weight:700; font-size:0.94rem;}
+.wastelog-row .left .meta{font-size:0.76rem; color:var(--ink-soft); font-family:var(--mono); margin-top:2px;}
+.wastelog-row .right{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-weight:600; color:var(--tomato);}
+.wastelog-row .undo{cursor:pointer; color:var(--ink-faint); font-family:var(--body); font-size:0.75rem; text-decoration:underline;}
+.wastelog-total{display:flex; justify-content:space-between; padding-top:16px; font-family:var(--display); font-size:1.3rem;}
+
+/* Insights */
+.insights-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+.chart-bars{display:flex; align-items:flex-end; gap:14px; height:200px; padding-top:20px;}
+.chart-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+.chart-fill{width:100%; max-width:44px; background:var(--tomato); border-radius:6px 6px 0 0; transition:height .4s ease;}
+.chart-amt{font-family:var(--mono); font-size:0.72rem; margin-bottom:4px;}
+.chart-label{font-size:0.72rem; color:var(--ink-soft); margin-top:8px; text-align:center;}
+.reason-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:0.88rem;}
+.reason-row .cnt{font-family:var(--mono); color:var(--ink-soft);}
+.streak-card{text-align:center; padding:26px;}
+.streak-card .num{font-family:var(--display); font-size:3rem; color:var(--herb);}
+
+/* Recipe ideas */
+.recipe-card{padding:14px 0; border-bottom:1px solid var(--line);}
+.recipe-card:last-child{border-bottom:none;}
+.recipe-card .rname{font-weight:700; font-size:0.96rem;}
+.recipe-card .rdesc{font-size:0.86rem; color:var(--ink-soft); margin-top:4px;}
+.recipe-card .ruses{font-family:var(--mono); font-size:0.7rem; margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;}
+.recipe-use-tag{background:var(--herb-light); color:var(--herb); padding:2px 8px; border-radius:12px;}
+.recipe-use-tag.urgent{background:var(--tomato-light); color:var(--tomato);}
+.recipe-link{font-size:0.76rem; color:var(--tomato); font-weight:700; cursor:pointer; text-decoration:underline;}
+
+/* Modal */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(42,36,30,0.5); display:none;
+  align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--paper-light); border-radius:var(--radius); width:100%; max-width:440px; max-height:88vh; overflow-y:auto; box-shadow:var(--shadow);}
+.modal-header{display:flex; justify-content:space-between; align-items:center; padding:20px 22px; border-bottom:1px solid var(--line);}
+.modal-header h3{font-size:1.1rem;}
+.modal-close{cursor:pointer; font-size:1.3rem; line-height:1; color:var(--ink-soft); background:none; border:none;}
+.modal-body{padding:20px 22px;}
+.modal-footer{padding:16px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px;}
+.reason-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px;}
+.reason-pill{padding:9px; text-align:center; border:1.5px solid var(--line-strong); border-radius:7px; font-size:0.82rem; cursor:pointer; font-weight:600; color:var(--ink-soft);}
+.reason-pill.active{background:var(--tomato); border-color:var(--tomato); color:var(--paper-light);}
+
+/* Toast */
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--paper-light); padding:13px 22px; border-radius:8px;
+  font-size:0.88rem; font-weight:600; opacity:0; pointer-events:none; transition:all .25s ease; z-index:200;
+  box-shadow:var(--shadow);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* ============================= RESPONSIVE ============================= */
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;}
+  .stats-strip{grid-template-columns:1fr; }
+  .stat-block{border-left:none; border-top:1px solid var(--line);}
+  .stat-block:first-child{border-top:none;}
+  .steps{grid-template-columns:1fr;}
+  .features-grid{grid-template-columns:repeat(2,1fr);}
+  .app-shell{grid-template-columns:1fr;}
+  .sidebar{flex-direction:row; align-items:center; padding:14px 18px; overflow-x:auto;}
+  .sidebar .brand{margin-bottom:0; margin-right:auto;}
+  .sidebar-nav{flex-direction:row;}
+  .sidebar-user{display:none;}
+  .side-link span{display:none;}
+  .main{padding:24px 20px 50px;}
+  .stat-cards{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+  .insights-grid{grid-template-columns:1fr;}
+  .nav-links span.hide-mobile{display:none;}
+}
+@media (max-width:560px){
+  .features-grid{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================= -->
+<!-- LANDING VIEW -->
+<!-- ============================================================= -->
+<div class="view active" id="view-landing">
+  <nav class="navbar">
+    <div class="brand"><span class="stamp-mark">FK</span> FOODKEEP</div>
+    <div class="nav-links">
+      <a class="hide-mobile" onclick="scrollToSection('how')">How it works</a>
+      <a class="hide-mobile" onclick="scrollToSection('features')">Features</a>
+      <a class="btn btn-dark btn-sm" onclick="goLogin('login')">Log in</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Personal food &amp; waste tracker</span>
+      <h1>STOP<br>FEEDING<br>THE <em>BIN.</em></h1>
+      <p class="lede">Foodkeep keeps a running tab of what's in your kitchen, nudges you before things turn, and logs every toss with a reason — so you can see exactly where your grocery money actually goes.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="goLogin('signup')">Start tracking — it's free</button>
+        <button class="btn btn-ghost" onclick="scrollToSection('how')">See how it works</button>
+      </div>
+      <p class="hero-note">No credit card. No app store. Just a kitchen log that remembers what you forget.</p>
+    </div>
+    <div class="receipt-wrap">
+      <div class="receipt">
+        <div class="receipt-head">FOODKEEP</div>
+        <div class="receipt-sub" id="hero-date"></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-line" style="animation-delay:.3s"><span>Palak, 1 bunch</span><span>₹30.00</span></div>
+        <div class="receipt-line wasted" style="animation-delay:.55s"><span>Bananas — spoiled</span><span>-₹25.00</span></div>
+        <div class="receipt-line" style="animation-delay:.8s"><span>Curd, 400g</span><span>₹60.00</span></div>
+        <div class="receipt-line wasted" style="animation-delay:1.05s"><span>Milk — expired</span><span>-₹65.00</span></div>
+        <div class="receipt-line" style="animation-delay:1.3s"><span>Chicken, 500g</span><span>₹180.00</span></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-total"><span>WASTED THIS WEEK</span><span class="num">₹90.00</span></div>
+        <div class="receipt-stamp">TRACKED</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats-strip">
+    <div class="stat-block">
+      <div class="num">₹1.52L cr</div>
+      <div class="cap">lost to food waste across India, every year</div>
+      <span class="src">— NABCONS, 2022</span>
+    </div>
+    <div class="stat-block">
+      <div class="num">⅓</div>
+      <div class="cap">of all food produced in India is wasted or spoilt before it's eaten</div>
+      <span class="src">— FSSAI</span>
+    </div>
+    <div class="stat-block">
+      <div class="num">55 kg</div>
+      <div class="cap">wasted per person, per year, inside Indian homes</div>
+      <span class="src">— UNEP Food Waste Index</span>
+    </div>
+  </div>
+
+  <section class="section" id="how">
+    <span class="eyebrow">The system</span>
+    <h2 class="section-title">Three habits, not a diet plan</h2>
+    <p class="section-lede">Foodkeep doesn't ask you to meal-prep or feel guilty. It just keeps the receipt.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="idx">01</div>
+        <h3>Stock your pantry</h3>
+        <p>Log what you bring home and when it expires. Takes about as long as unpacking the bag.</p>
+      </div>
+      <div class="step">
+        <div class="idx">02</div>
+        <h3>Get nudged</h3>
+        <p>Foodkeep flags what's about to turn, sorted by how much time you've got left — not by guesswork.</p>
+      </div>
+      <div class="step">
+        <div class="idx">03</div>
+        <h3>See the receipt</h3>
+        <p>Every toss gets logged with a reason. Over a few weeks, the pattern tells you more than the pile ever did.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <span class="eyebrow">What's inside</span>
+    <h2 class="section-title">Built like a kitchen, not a spreadsheet</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-tag tag-herb">Pantry</span>
+        <h3>Pantry tracker</h3>
+        <p>Know what's already in the fridge before you buy more of it at the store.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-tag tag-tomato">Waste log</span>
+        <h3>The waste log</h3>
+        <p>Log every toss with a reason — spoiled, forgotten, overcooked. Patterns beat guesswork.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-tag tag-yolk">Insights</span>
+        <h3>Weekly insights</h3>
+        <p>See what's costing you the most, broken down by category and by week.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-tag tag-herb">Reminders</span>
+        <h3>Expiry reminders</h3>
+        <p>A nudge a few days before it's compost, not a surprise after it already is.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <h2>Your fridge is not a landfill.</h2>
+    <button class="btn btn-primary" onclick="goLogin('signup')">Create your free account</button>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="brand"><span class="stamp-mark">FK</span> FOODKEEP</div>
+      <div class="footer-links">
+        <a onclick="scrollToSection('how')">How it works</a>
+        <a onclick="scrollToSection('features')">Features</a>
+        <a onclick="goLogin('login')">Log in</a>
+        <a onclick="goLogin('signup')">Create account</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Track it before you trash it.</span>
+      <span>Demo product — your data stays in this browser only.</span>
+    </div>
+  </footer>
+</div>
+
+<!-- ============================================================= -->
+<!-- LOGIN VIEW -->
+<!-- ============================================================= -->
+<div class="view" id="view-login">
+  <div class="login-view">
+    <div class="login-card">
+      <div class="tape"></div>
+      <div class="login-back" onclick="showView('landing')">&larr; Back to Foodkeep</div>
+      <div class="login-head">
+        <div class="stamp-mark" style="margin:0 auto 14px;">FK</div>
+        <h2 id="login-title">Welcome back</h2>
+        <p id="login-sub">Log in to see what's about to turn.</p>
+      </div>
+      <div class="tabs">
+        <div class="tab active" id="tab-login" onclick="switchAuthTab('login')">Log in</div>
+        <div class="tab" id="tab-signup" onclick="switchAuthTab('signup')">Create account</div>
+      </div>
+
+      <div class="error-msg" id="auth-error"></div>
+
+      <form id="form-login" onsubmit="handleLogin(event)">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="you@kitchen.com" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      </form>
+
+      <form id="form-signup" style="display:none;" onsubmit="handleSignup(event)">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="signup-name" placeholder="Your name" required>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="signup-email" placeholder="you@kitchen.com" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="signup-password" placeholder="At least 4 characters" required minlength="4">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <div class="divider-or">or</div>
+      <button class="btn btn-ghost btn-block" onclick="continueAsGuest()">Continue as guest, with sample data</button>
+
+      <p class="hint-note">This is a personal, local demo login — accounts and kitchen data are stored only in this browser, not on a server.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- APP VIEW -->
+<!-- ============================================================= -->
+<div class="view" id="view-app">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="stamp-mark">FK</span> FOODKEEP</div>
+      <nav class="sidebar-nav">
+        <div class="side-link" data-tab="overview" onclick="switchTab('overview')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>
+          <span>Overview</span>
+        </div>
+        <div class="side-link" data-tab="pantry" onclick="switchTab('pantry')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9h18l-1.5 11a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>
+          <span>Pantry</span>
+        </div>
+        <div class="side-link" data-tab="waste" onclick="switchTab('waste')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+          <span>Waste log</span>
+        </div>
+        <div class="side-link" data-tab="insights" onclick="switchTab('insights')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="7" width="3" height="11"/><rect x="16" y="3" width="3" height="15"/></svg>
+          <span>Insights</span>
+        </div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="name" id="side-user-name">—</div>
+        <div class="email" id="side-user-email">—</div>
+        <div class="logout-link" onclick="logout()">&larr; Log out</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="greeting" id="app-greeting">Hi there</div>
+          <div class="date-chip" id="app-date"></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openWasteModal()">Log waste</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">+ Add item</button>
+        </div>
+      </div>
+      <div id="app-content"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- MODALS -->
+<!-- ============================================================= -->
+<div class="modal-overlay" id="modal-additem">
+  <div class="modal">
+    <div class="modal-header"><h3>Add to pantry</h3><button class="modal-close" onclick="closeModal('modal-additem')">&times;</button></div>
+    <form id="form-additem" onsubmit="submitAddItem(event)">
+      <div class="modal-body">
+        <div class="field"><label>Item name</label><input type="text" id="item-name" placeholder="e.g. Spinach" required></div>
+        <div class="field"><label>Category</label>
+          <select id="item-category">
+            <option>Produce</option><option>Dairy &amp; Eggs</option><option>Meat &amp; Seafood</option>
+            <option>Grains &amp; Bakery</option><option>Pantry Staples</option><option>Leftovers</option><option>Beverages</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;"><label>Quantity</label><input type="number" id="item-qty" min="0" step="any" placeholder="e.g. 12" required></div>
+          <div class="field" style="flex:1;"><label>Unit</label><input type="text" id="item-unit" placeholder="e.g. eggs, g, loaf" required></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;"><label>Total cost (₹)</label><input type="number" id="item-cost" step="0.01" min="0" placeholder="0.00" required></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;"><label>Purchased</label><input type="date" id="item-purchase" required></div>
+          <div class="field" style="flex:1;"><label>Expires</label><input type="date" id="item-expiry" required></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modal-additem')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add to pantry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-waste">
+  <div class="modal">
+    <div class="modal-header"><h3>Log a waste</h3><button class="modal-close" onclick="closeModal('modal-waste')">&times;</button></div>
+    <form id="form-waste" onsubmit="submitWaste(event)">
+      <div class="modal-body">
+        <input type="hidden" id="waste-pantry-id">
+        <div class="field"><label>Item name</label><input type="text" id="waste-name" placeholder="e.g. Bananas" required></div>
+        <div class="field"><label>Category</label>
+          <select id="waste-category">
+            <option>Produce</option><option>Dairy &amp; Eggs</option><option>Meat &amp; Seafood</option>
+            <option>Grains &amp; Bakery</option><option>Pantry Staples</option><option>Leftovers</option><option>Beverages</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Reason</label>
+          <div class="reason-grid" id="reason-grid">
+            <div class="reason-pill" data-reason="Spoiled">Spoiled</div>
+            <div class="reason-pill" data-reason="Expired">Expired</div>
+            <div class="reason-pill" data-reason="Cooked too much">Cooked too much</div>
+            <div class="reason-pill" data-reason="Forgot it was there">Forgot it was there</div>
+            <div class="reason-pill" data-reason="Didn't like it">Didn't like it</div>
+            <div class="reason-pill" data-reason="Other">Other</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="field" style="flex:1;"><label>Quantity wasted</label><input type="number" id="waste-qty" min="0" step="any" placeholder="e.g. 4" required oninput="onWasteQtyInput()"></div>
+          <div class="field" style="flex:1;"><label>Unit</label><input type="text" id="waste-unit" placeholder="e.g. eggs, g, loaf" required></div>
+        </div>
+        <p class="hint-note" id="waste-remaining-hint" style="display:none; margin-top:-8px; text-align:left;"></p>
+        <div class="field"><label>Cost of amount wasted (₹)</label><input type="number" id="waste-cost" step="0.01" min="0" placeholder="0.00" required></div>
+        <div class="field"><label>Date</label><input type="date" id="waste-date" required></div>
+        <div class="field"><label>Note (optional)</label><textarea id="waste-note" rows="2" placeholder="Any details worth remembering"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modal-waste')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Log it</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-recipes">
+  <div class="modal">
+    <div class="modal-header"><h3 id="recipe-modal-title">Recipe ideas</h3><button class="modal-close" onclick="closeModal('modal-recipes')">&times;</button></div>
+    <div class="modal-body" id="recipe-modal-body"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('modal-recipes')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= STORAGE SHIM ================= */
+const storage = {
+  async get(key){
+    if (window.storage){ try{ const r = await window.storage.get(key); return r ? r.value : null; }catch(e){ return null; } }
+    try{ return localStorage.getItem(key); }catch(e){ return null; }
+  },
+  async set(key, value){
+    if (window.storage){ try{ await window.storage.set(key, value); return; }catch(e){} }
+    try{ localStorage.setItem(key, value); }catch(e){}
+  }
+};
+
+/* ================= STATE ================= */
+let accounts = {};      // email -> {name, password}
+let session = null;     // email of logged in user
+let currentUser = null; // {name, email}
+let pantry = [];
+let wasteLog = [];
+let savedLog = [];
+let currentTab = 'overview';
+let selectedReason = null;
+let pantryFilter = 'All';
+
+const RECIPES = [
+  {name:'Palak Dal', keywords:['palak','spinach','saag','dal','moong','lentil'], desc:"Simmer wilting greens into a comforting yellow dal — spinach that's a day from turning is perfect here."},
+  {name:'Banana Sheera or Banana Bread', keywords:['banana'], desc:'Overripe bananas are sweeter, not spoiled — mash them into a quick sheera or banana bread.'},
+  {name:'Curd Rice', keywords:['curd','yogurt','dahi'], desc:"Curd that's turned a little sour is exactly what curd rice wants — no need to toss it."},
+  {name:'Quick Sabzi or Bhurji', keywords:['capsicum','tomato','onion','bell pepper','vegetable','veggies','carrot','beans','peas'], desc:'Soft capsicum, onion, tomato or other vegetables disappear beautifully into a quick sabzi or bhurji.'},
+  {name:'Chana Chaat', keywords:['chana','chickpea','chickpeas'], desc:'Leftover boiled or canned chana turns into a five-minute chaat with onion, lemon and chaat masala.'},
+  {name:'French Toast or Bread Upma', keywords:['bread'], desc:"Bread that's gone stale but not moldy is ideal for French toast or a spiced bread upma."},
+  {name:'Fried Rice from Leftovers', keywords:['rice','pulao','leftover pulao','leftover rice'], desc:'Day-old rice fries up better than fresh rice — toss in whatever vegetables are also on their way out.'},
+  {name:'Quick Chicken Curry', keywords:['chicken'], desc:'Chicken close to its date should be cooked today — a quick curry or shredded filling uses it fully.'},
+  {name:'Homemade Paneer or Kheer', keywords:['milk'], desc:'Milk about to turn can be curdled into fresh paneer, or spiced into kheer — both forgive a slightly-off smell.'},
+  {name:'Egg Bhurji or Frittata', keywords:['egg','eggs'], desc:'A few extra eggs close to date go straight into a bhurji or frittata with whatever vegetables need using too.'},
+  {name:'Fruit Chaat or Smoothie', keywords:['apple','fruit','mango','papaya','orange'], desc:'Soft or bruised fruit is smoothie and fruit-chaat material — just cut around any bad spots.'},
+  {name:'Vegetable Stock or Soup', keywords:['carrot','beans','peas','cauliflower','broccoli'], desc:"Softening vegetables are perfect for a stock or a simple blended soup — texture won't matter once cooked down."}
+];
+
+function getRecipeIdeas(items){
+  const pool = items || pantry;
+  const results = [];
+  RECIPES.forEach(r=>{
+    const matched = pool.filter(p=> r.keywords.some(k=>{
+      const n = p.name.toLowerCase();
+      return n.includes(k) || k.includes(n);
+    }));
+    if (matched.length){
+      const urgent = matched.filter(p=>daysUntil(p.expiryDate)<=3).length;
+      results.push({recipe:r, matched, urgent});
+    }
+  });
+  results.sort((a,b)=> b.urgent-a.urgent || b.matched.length-a.matched.length);
+  return results;
+}
+
+function renderRecipeList(ideas){
+  if (!ideas.length) return `<div class="empty-state">No recipe matches yet — add a few pantry items and ideas will show up here.</div>`;
+  return ideas.slice(0,4).map(({recipe, matched})=>{
+    const tags = matched.map(p=>{
+      const urgent = daysUntil(p.expiryDate)<=3;
+      return `<span class="recipe-use-tag ${urgent?'urgent':''}">${escapeHTML(p.name)}</span>`;
+    }).join('');
+    return `<div class="recipe-card">
+      <div class="rname">${recipe.name}</div>
+      <div class="rdesc">${recipe.desc}</div>
+      <div class="ruses">Uses: ${tags}</div>
+    </div>`;
+  }).join('');
+}
+
+const uid = () => Math.random().toString(36).slice(2,10);
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtMoney = (n) => '₹' + (Math.round((n||0)*100)/100).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtDate = (iso) => { const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-US',{month:'short', day:'numeric'}); };
+const daysUntil = (iso) => { const d = new Date(iso+'T00:00:00'); const t = new Date(); t.setHours(0,0,0,0); return Math.round((d-t)/86400000); };
+
+/* ================= INIT ================= */
+(async function init(){
+  document.getElementById('hero-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long', month:'short', day:'numeric'});
+  document.getElementById('item-purchase').value = todayISO();
+  document.getElementById('item-expiry').value = todayISO();
+  document.getElementById('waste-date').value = todayISO();
+
+  const accStr = await storage.get('foodkeep_accounts');
+  if (accStr){ try{ accounts = JSON.parse(accStr); }catch(e){ accounts = {}; } }
+
+  const sessionEmail = await storage.get('foodkeep_session');
+  if (sessionEmail && accounts[sessionEmail]){
+    session = sessionEmail;
+    currentUser = { name: accounts[sessionEmail].name, email: sessionEmail };
+    await loadUserData(sessionEmail);
+    showView('app');
+  } else {
+    showView('landing');
+  }
+
+  document.querySelectorAll('.reason-pill').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      document.querySelectorAll('.reason-pill').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+      selectedReason = p.dataset.reason;
+    });
+  });
+})();
+
+async function loadUserData(email){
+  const pKey = 'foodkeep_pantry_'+email, wKey = 'foodkeep_waste_'+email, sKey = 'foodkeep_saved_'+email;
+  const p = await storage.get(pKey), w = await storage.get(wKey), s = await storage.get(sKey);
+  pantry = p ? JSON.parse(p) : [];
+  wasteLog = w ? JSON.parse(w) : [];
+  savedLog = s ? JSON.parse(s) : [];
+}
+async function persistUserData(){
+  if (!currentUser) return;
+  const e = currentUser.email;
+  await storage.set('foodkeep_pantry_'+e, JSON.stringify(pantry));
+  await storage.set('foodkeep_waste_'+e, JSON.stringify(wasteLog));
+  await storage.set('foodkeep_saved_'+e, JSON.stringify(savedLog));
+}
+async function persistAccounts(){ await storage.set('foodkeep_accounts', JSON.stringify(accounts)); }
+
+/* ================= ROUTING ================= */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  window.scrollTo(0,0);
+  if (name === 'app'){ renderSidebarUser(); switchTab(currentTab); }
+}
+function scrollToSection(id){
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior:'smooth'});
+}
+function goLogin(mode){ showView('login'); switchAuthTab(mode); }
+
+/* ================= AUTH ================= */
+function switchAuthTab(mode){
+  const isLogin = mode === 'login';
+  document.getElementById('tab-login').classList.toggle('active', isLogin);
+  document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+  document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('login-title').textContent = isLogin ? 'Welcome back' : 'Set up your kitchen';
+  document.getElementById('login-sub').textContent = isLogin ? "Log in to see what's about to turn." : 'Takes under a minute. No card, no catch.';
+  hideAuthError();
+}
+function showAuthError(msg){ const el = document.getElementById('auth-error'); el.textContent = msg; el.classList.add('show'); }
+function hideAuthError(){ document.getElementById('auth-error').classList.remove('show'); }
+
+async function handleSignup(e){
+  e.preventDefault();
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim().toLowerCase();
+  const password = document.getElementById('signup-password').value;
+  if (accounts[email]){ showAuthError("An account already exists with that email. Try logging in instead."); return; }
+  accounts[email] = { name, password };
+  await persistAccounts();
+  session = email;
+  await storage.set('foodkeep_session', email);
+  currentUser = { name, email };
+  pantry = []; wasteLog = []; savedLog = [];
+  await persistUserData();
+  showView('app');
+  showToast('Welcome to Foodkeep, '+name.split(' ')[0]+'.');
+}
+async function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const acc = accounts[email];
+  if (!acc || acc.password !== password){
+    showAuthError("We don't recognize that email and password combo. Try again, or create an account.");
+    return;
+  }
+  session = email;
+  await storage.set('foodkeep_session', email);
+  currentUser = { name: acc.name, email };
+  await loadUserData(email);
+  showView('app');
+  showToast('Welcome back, '+acc.name.split(' ')[0]+'.');
+}
+async function continueAsGuest(){
+  const email = 'guest@foodkeep.local';
+  if (!accounts[email]) accounts[email] = { name:'Guest', password:'' };
+  await persistAccounts();
+  session = email;
+  await storage.set('foodkeep_session', email);
+  currentUser = { name:'Guest', email };
+  const existing = await storage.get('foodkeep_pantry_'+email);
+  if (!existing){ seedGuestData(); await persistUserData(); }
+  else { await loadUserData(email); }
+  showView('app');
+  showToast('Browsing with sample data.');
+}
+async function logout(){
+  session = null; currentUser = null;
+  await storage.set('foodkeep_session', '');
+  showView('landing');
+}
+
+function seedGuestData(){
+  const off = (n) => { const d = new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+  pantry = [
+    {id:uid(), name:'Palak', category:'Produce', qty:1, unit:'bunch', cost:30, purchaseDate:off(-4), expiryDate:off(1)},
+    {id:uid(), name:'Curd', category:'Dairy & Eggs', qty:400, unit:'g', cost:60, purchaseDate:off(-6), expiryDate:off(2)},
+    {id:uid(), name:'Chicken', category:'Meat & Seafood', qty:500, unit:'g', cost:180, purchaseDate:off(-1), expiryDate:off(4)},
+    {id:uid(), name:'Eggs', category:'Dairy & Eggs', qty:12, unit:'eggs', cost:96, purchaseDate:off(-3), expiryDate:off(6)},
+    {id:uid(), name:'Brown bread', category:'Grains & Bakery', qty:1, unit:'loaf', cost:55, purchaseDate:off(-5), expiryDate:off(-1)},
+    {id:uid(), name:'Chana (canned)', category:'Pantry Staples', qty:2, unit:'tins', cost:90, purchaseDate:off(-20), expiryDate:off(200)},
+    {id:uid(), name:'Leftover pulao', category:'Leftovers', qty:2, unit:'servings', cost:70, purchaseDate:off(-2), expiryDate:off(1)}
+  ];
+  wasteLog = [
+    {id:uid(), name:'Bananas', category:'Produce', reason:'Spoiled', qty:3, unit:'pcs', cost:40, date:off(-2), note:''},
+    {id:uid(), name:'Milk', category:'Dairy & Eggs', reason:'Expired', qty:1, unit:'packet', cost:65, date:off(-5), note:''},
+    {id:uid(), name:'Leftover rice', category:'Leftovers', reason:'Forgot it was there', qty:1, unit:'container', cost:50, date:off(-8), note:''},
+    {id:uid(), name:'Capsicum', category:'Produce', reason:'Spoiled', qty:2, unit:'pcs', cost:35, date:off(-10), note:''},
+    {id:uid(), name:'Bread', category:'Grains & Bakery', reason:'Expired', qty:1, unit:'loaf', cost:55, date:off(-15), note:''}
+  ];
+  savedLog = [
+    {id:uid(), name:'Carrots', cost:30, date:off(-3)},
+    {id:uid(), name:'Eggs', cost:90, date:off(-6)}
+  ];
+}
+
+/* ================= APP RENDER ================= */
+function renderSidebarUser(){
+  if (!currentUser) return;
+  document.getElementById('side-user-name').textContent = currentUser.name;
+  document.getElementById('side-user-email').textContent = currentUser.email === 'guest@foodkeep.local' ? 'guest session' : currentUser.email;
+  const hr = new Date().getHours();
+  const part = hr < 12 ? 'morning' : hr < 18 ? 'afternoon' : 'evening';
+  document.getElementById('app-greeting').textContent = `Good ${part}, ${currentUser.name.split(' ')[0]}.`;
+  document.getElementById('app-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.side-link').forEach(l=> l.classList.toggle('active', l.dataset.tab===tab));
+  const el = document.getElementById('app-content');
+  if (tab==='overview') el.innerHTML = renderOverview();
+  if (tab==='pantry') el.innerHTML = renderPantry();
+  if (tab==='waste') el.innerHTML = renderWasteLog();
+  if (tab==='insights') el.innerHTML = renderInsights();
+}
+
+function monthKey(dateStr){ return dateStr.slice(0,7); }
+
+function renderOverview(){
+  const thisMonth = monthKey(todayISO());
+  const lastMonthDate = new Date(); lastMonthDate.setMonth(lastMonthDate.getMonth()-1);
+  const lastMonth = lastMonthDate.toISOString().slice(0,7);
+  const wastedThis = wasteLog.filter(w=>monthKey(w.date)===thisMonth).reduce((s,w)=>s+Number(w.cost),0);
+  const wastedLast = wasteLog.filter(w=>monthKey(w.date)===lastMonth).reduce((s,w)=>s+Number(w.cost),0);
+  const savedTotal = savedLog.reduce((s,x)=>s+Number(x.cost),0);
+  const expiringSoon = pantry.filter(p=>daysUntil(p.expiryDate)<=3);
+  let trendText = 'No data yet for last month';
+  if (wastedLast>0){
+    const diff = wastedThis - wastedLast;
+    const pct = Math.abs(Math.round((diff/wastedLast)*100));
+    trendText = diff<=0 ? `▼ ${pct}% less than last month` : `▲ ${pct}% more than last month`;
+  }
+  let streakDays = '—';
+  if (wasteLog.length){
+    const lastWaste = wasteLog.map(w=>w.date).sort().reverse()[0];
+    streakDays = Math.max(0, daysUntil(lastWaste) * -1);
+  }
+
+  const expiringHTML = expiringSoon.length ? expiringSoon.sort((a,b)=>daysUntil(a.expiryDate)-daysUntil(b.expiryDate)).slice(0,5).map(p=>{
+    const d = daysUntil(p.expiryDate);
+    const chip = d<0 ? `<span class="expiry-chip expired">Expired</span>` : d<=1 ? `<span class="expiry-chip soon">Today/tomorrow</span>` : `<span class="expiry-chip soon">${d} days left</span>`;
+    return `<div class="expiring-item"><div><div class="name">${escapeHTML(p.name)}</div><div class="meta">${p.category} · ${p.qty} ${escapeHTML(p.unit)}</div></div>${chip}</div>`;
+  }).join('') : `<div class="empty-state">Nothing urgent — your pantry looks calm.</div>`;
+
+  const recentWaste = wasteLog.slice().sort((a,b)=> b.date.localeCompare(a.date)).slice(0,5);
+  const recentHTML = recentWaste.length ? recentWaste.map(w=>`
+    <div class="receipt-line"><span>${escapeHTML(w.name)} — ${w.reason.toLowerCase()}</span><span style="color:var(--tomato); font-weight:600;">-${fmtMoney(w.cost)}</span></div>
+  `).join('') : `<div class="empty-state">No waste logged yet. Good sign, or too early to tell.</div>`;
+
+  return `
+    <div class="stat-cards">
+      <div class="stat-card"><div class="label">Thrown out this month</div><div class="value tomato">${fmtMoney(wastedThis)}</div><div class="trend">${trendText}</div></div>
+      <div class="stat-card"><div class="label">Saved by using it in time</div><div class="value herb">${fmtMoney(savedTotal)}</div><div class="trend">from ${savedLog.length} item${savedLog.length===1?'':'s'} used up</div></div>
+      <div class="stat-card"><div class="label">Expiring within 3 days</div><div class="value yolk">${expiringSoon.length}</div><div class="trend">check the pantry tab</div></div>
+      <div class="stat-card"><div class="label">Days since last toss</div><div class="value">${streakDays}</div><div class="trend">${wasteLog.length? 'keep it going' : 'no waste logged yet'}</div></div>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head"><h3>Expiring soon</h3><a onclick="switchTab('pantry')">View pantry →</a></div>
+        ${expiringHTML}
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Recent waste</h3><a onclick="switchTab('waste')">Full log →</a></div>
+        <div class="mini-receipt">${recentHTML}</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:20px;">
+      <div class="panel-head"><h3>Recipe ideas — use it before you lose it</h3></div>
+      ${renderRecipeList(getRecipeIdeas())}
+    </div>
+  `;
+}
+
+function renderPantry(){
+  const cats = ['All','Produce','Dairy & Eggs','Meat & Seafood','Grains & Bakery','Pantry Staples','Leftovers','Beverages'];
+  const chips = cats.map(c=>`<div class="chip ${pantryFilter===c?'active':''}" onclick="setPantryFilter('${c}')">${c}</div>`).join('');
+  const items = pantry.filter(p=> pantryFilter==='All' || p.category===pantryFilter)
+    .sort((a,b)=> daysUntil(a.expiryDate)-daysUntil(b.expiryDate));
+  const cards = items.length ? items.map(p=>{
+    const d = daysUntil(p.expiryDate);
+    const chipClass = d<0 ? 'expired' : d<=3 ? 'soon' : 'fresh';
+    const chipText = d<0 ? `Expired ${Math.abs(d)}d ago` : d===0 ? 'Use today' : `${d}d left`;
+    return `<div class="pantry-card">
+      <div class="top-row">
+        <div><div class="item-name">${escapeHTML(p.name)}</div><div class="cat-label">${p.category}</div></div>
+        <span class="expiry-chip ${chipClass}">${chipText}</span>
+      </div>
+      <div class="item-meta">${p.qty} ${escapeHTML(p.unit)} · ${fmtMoney(p.cost)} · exp ${fmtDate(p.expiryDate)}</div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="markUsed('${p.id}')">Used it up</button>
+        <button class="btn btn-primary btn-sm" onclick="openWasteModal('${p.id}')">Log waste</button>
+      </div>
+      <div class="recipe-link" onclick="openRecipeModal('${p.id}')">💡 What can I cook with this?</div>
+    </div>`;
+  }).join('') : `<div class="empty-state">Nothing here yet. Add an item to start tracking.</div>`;
+
+  return `<div class="toolbar">${chips}</div><div class="pantry-grid">${cards}</div>`;
+}
+
+function setPantryFilter(c){ pantryFilter = c; switchTab('pantry'); }
+
+function renderWasteLog(){
+  const sorted = wasteLog.slice().sort((a,b)=> b.date.localeCompare(a.date));
+  const total = sorted.reduce((s,w)=>s+Number(w.cost),0);
+  const rows = sorted.length ? sorted.map(w=>`
+    <div class="wastelog-row">
+      <div class="left">
+        <div class="n">${escapeHTML(w.name)}</div>
+        <div class="meta">${w.qty} ${escapeHTML(w.unit||'')} · ${w.category} · ${w.reason} · ${fmtDate(w.date)}${w.note? ' · '+escapeHTML(w.note):''}</div>
+      </div>
+      <div class="right">-${fmtMoney(w.cost)} <span class="undo" onclick="deleteWaste('${w.id}')">undo</span></div>
+    </div>
+  `).join('') : `<div class="empty-state">No waste logged yet.</div>`;
+
+  return `<div class="wastelog-receipt">
+      <div class="receipt-head" style="text-align:left;">WASTE LOG</div>
+      <div class="receipt-sub" style="text-align:left;">Everything that ended up in the bin</div>
+      ${rows}
+      <div class="wastelog-total"><span>TOTAL</span><span>${fmtMoney(total)}</span></div>
+    </div>`;
+}
+
+async function deleteWaste(id){
+  wasteLog = wasteLog.filter(w=>w.id!==id);
+  await persistUserData();
+  switchTab('waste');
+  showToast('Entry removed.');
+}
+
+function renderInsights(){
+  const catTotals = {};
+  wasteLog.forEach(w=>{ catTotals[w.category] = (catTotals[w.category]||0) + Number(w.cost); });
+  const cats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const max = cats.length ? cats[0][1] : 1;
+  const bars = cats.length ? cats.map(([c,v])=>`
+    <div class="chart-col">
+      <div class="chart-amt">${fmtMoney(v)}</div>
+      <div class="chart-fill" style="height:${Math.max(6,(v/max)*150)}px;"></div>
+      <div class="chart-label">${c}</div>
+    </div>
+  `).join('') : `<div class="empty-state">Log some waste to see the breakdown.</div>`;
+
+  const reasonTotals = {};
+  wasteLog.forEach(w=>{ if(!reasonTotals[w.reason]) reasonTotals[w.reason] = {count:0, cost:0}; reasonTotals[w.reason].count++; reasonTotals[w.reason].cost += Number(w.cost); });
+  const reasons = Object.entries(reasonTotals).sort((a,b)=>b[1].cost-a[1].cost);
+  const reasonHTML = reasons.length ? reasons.map(([r,d])=>`
+    <div class="reason-row"><span>${r}</span><span class="cnt">${d.count}× · ${fmtMoney(d.cost)}</span></div>
+  `).join('') : `<div class="empty-state">No reasons logged yet.</div>`;
+
+  const monthsSeen = new Set(wasteLog.map(w=>monthKey(w.date)));
+  const totalAll = wasteLog.reduce((s,w)=>s+Number(w.cost),0);
+  const monthlyAvg = monthsSeen.size ? totalAll/monthsSeen.size : 0;
+  const projected = monthlyAvg*12;
+
+  let streakDays = 0;
+  if (wasteLog.length){
+    const lastWaste = wasteLog.map(w=>w.date).sort().reverse()[0];
+    streakDays = Math.max(0, daysUntil(lastWaste) * -1);
+  }
+
+  return `
+    <div class="insights-grid">
+      <div class="panel">
+        <div class="panel-head"><h3>Waste by category</h3></div>
+        <div class="chart-bars">${bars}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>By reason</h3></div>
+        ${reasonHTML}
+      </div>
+    </div>
+    <div class="two-col" style="margin-top:20px;">
+      <div class="panel">
+        <div class="panel-head"><h3>Projected annual cost</h3></div>
+        <p style="font-family:var(--display); font-size:2.2rem; color:var(--tomato);">${fmtMoney(projected)}</p>
+        <p style="color:var(--ink-soft); font-size:0.88rem; margin-top:6px;">Based on an average of ${fmtMoney(monthlyAvg)} wasted per month, if nothing changes.</p>
+      </div>
+      <div class="panel streak-card">
+        <div class="label" style="font-family:var(--mono); font-size:0.72rem; text-transform:uppercase; color:var(--ink-soft);">Days since last toss</div>
+        <div class="num">${streakDays}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ================= MODALS ================= */
+function openAddItemModal(){
+  document.getElementById('form-additem').reset();
+  document.getElementById('item-purchase').value = todayISO();
+  document.getElementById('item-expiry').value = todayISO();
+  document.getElementById('modal-additem').classList.add('show');
+}
+let wasteCostPerUnit = null;
+function openWasteModal(pantryId){
+  document.getElementById('form-waste').reset();
+  document.getElementById('waste-date').value = todayISO();
+  document.getElementById('waste-pantry-id').value = pantryId || '';
+  document.getElementById('waste-remaining-hint').style.display = 'none';
+  document.querySelectorAll('.reason-pill').forEach(x=>x.classList.remove('active'));
+  selectedReason = null;
+  wasteCostPerUnit = null;
+  const qtyInput = document.getElementById('waste-qty');
+  qtyInput.removeAttribute('max');
+  if (pantryId){
+    const item = pantry.find(p=>p.id===pantryId);
+    if (item){
+      document.getElementById('waste-name').value = item.name;
+      document.getElementById('waste-category').value = item.category;
+      document.getElementById('waste-unit').value = item.unit;
+      qtyInput.value = item.qty;
+      qtyInput.max = item.qty;
+      wasteCostPerUnit = item.cost / item.qty;
+      document.getElementById('waste-cost').value = item.cost.toFixed(2);
+      const hint = document.getElementById('waste-remaining-hint');
+      hint.textContent = `You have ${item.qty} ${item.unit} in the pantry. Lower this number if you're only throwing part of it away.`;
+      hint.style.display = 'block';
+    }
+  }
+  document.getElementById('modal-waste').classList.add('show');
+}
+function onWasteQtyInput(){
+  if (wasteCostPerUnit === null) return;
+  const qty = parseFloat(document.getElementById('waste-qty').value) || 0;
+  document.getElementById('waste-cost').value = (qty * wasteCostPerUnit).toFixed(2);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function openRecipeModal(pantryId){
+  const item = pantry.find(p=>p.id===pantryId);
+  if (!item) return;
+  document.getElementById('recipe-modal-title').textContent = `What to cook with ${item.name}`;
+  const ideas = getRecipeIdeas([item]);
+  const body = ideas.length ? ideas.map(({recipe})=>`
+    <div class="recipe-card">
+      <div class="rname">${recipe.name}</div>
+      <div class="rdesc">${recipe.desc}</div>
+    </div>
+  `).join('') : `<div class="empty-state">No specific match for ${escapeHTML(item.name)} yet — a soup, stir-fry, or freezing it are safe bets.</div>`;
+  document.getElementById('recipe-modal-body').innerHTML = body;
+  document.getElementById('modal-recipes').classList.add('show');
+}
+
+async function submitAddItem(e){
+  e.preventDefault();
+  pantry.push({
+    id: uid(),
+    name: document.getElementById('item-name').value.trim(),
+    category: document.getElementById('item-category').value,
+    qty: parseFloat(document.getElementById('item-qty').value)||0,
+    unit: document.getElementById('item-unit').value.trim(),
+    cost: parseFloat(document.getElementById('item-cost').value)||0,
+    purchaseDate: document.getElementById('item-purchase').value,
+    expiryDate: document.getElementById('item-expiry').value
+  });
+  await persistUserData();
+  closeModal('modal-additem');
+  switchTab('pantry');
+  showToast('Added to pantry.');
+}
+
+async function markUsed(id){
+  const item = pantry.find(p=>p.id===id);
+  if (!item) return;
+  savedLog.push({id:uid(), name:item.name, cost:item.cost, date:todayISO()});
+  pantry = pantry.filter(p=>p.id!==id);
+  await persistUserData();
+  switchTab(currentTab==='overview' ? 'overview' : 'pantry');
+  showToast('Nice — used it before it turned.');
+}
+
+async function submitWaste(e){
+  e.preventDefault();
+  const pantryId = document.getElementById('waste-pantry-id').value;
+  let wasteQty = parseFloat(document.getElementById('waste-qty').value) || 0;
+  if (pantryId){
+    const srcItem = pantry.find(p=>p.id===pantryId);
+    if (srcItem && wasteQty > srcItem.qty) wasteQty = srcItem.qty;
+  }
+  const entry = {
+    id: uid(),
+    name: document.getElementById('waste-name').value.trim(),
+    category: document.getElementById('waste-category').value,
+    reason: selectedReason || 'Other',
+    qty: wasteQty,
+    unit: document.getElementById('waste-unit').value.trim(),
+    cost: parseFloat(document.getElementById('waste-cost').value)||0,
+    date: document.getElementById('waste-date').value,
+    note: document.getElementById('waste-note').value.trim()
+  };
+  wasteLog.push(entry);
+
+  let toastMsg = 'Logged. Onward.';
+  if (pantryId){
+    const item = pantry.find(p=>p.id===pantryId);
+    if (item){
+      const remaining = item.qty - wasteQty;
+      if (remaining <= 0.0001){
+        pantry = pantry.filter(p=>p.id!==pantryId);
+        toastMsg = 'Logged — none of that left in the pantry now.';
+      } else {
+        const costPerUnit = item.cost / item.qty;
+        item.qty = Math.round(remaining*100)/100;
+        item.cost = Math.round(costPerUnit * item.qty * 100)/100;
+        toastMsg = `Logged. ${item.qty} ${item.unit} still left in the pantry.`;
+      }
+    }
+  }
+  await persistUserData();
+  closeModal('modal-waste');
+  switchTab(currentTab);
+  showToast(toastMsg);
+}
+
+/* ================= UTIL ================= */
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+</script>
+</body>
+</html>
